@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AgeGroup {
+  SEEDLING
+  SPROUT
+  SAPLING
+  TREE
+}
+
+enum Role {
+  PARENT
+  TEACHER
+}
+
+enum WordSource {
+  STORY
+  SCAN
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  name          String
+  role          Role        @default(PARENT)
+  avatar        String?
+  emailVerified DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+  children      Child[]
+  classrooms    Classroom[]
+}
+
+model Child {
+  id                String            @id @default(cuid())
+  name              String
+  ageGroup          AgeGroup
+  avatarEmoji       String            @default("🌟")
+  parentId          String
+  streak            Int               @default(0)
+  longestStreak     Int               @default(0)
+  totalWordsLearned Int               @default(0)
+  lastActiveDate    DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
+  parent            User              @relation(fields: [parentId], references: [id])
+  progress          DailyProgress[]
+  wordEvents        WordEvent[]
+  scanSessions      ScanSession[]
+  classrooms        ClassroomMember[]
+}
+
+model Classroom {
+  id          String            @id @default(cuid())
+  name        String
+  teacherId   String
+  inviteCode  String            @unique
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  deletedAt   DateTime?
+  teacher     User              @relation(fields: [teacherId], references: [id])
+  members     ClassroomMember[]
+}
+
+model ClassroomMember {
+  id          String    @id @default(cuid())
+  classroomId String
+  childId     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  classroom   Classroom @relation(fields: [classroomId], references: [id])
+  child       Child     @relation(fields: [childId], references: [id])
+
+  @@unique([classroomId, childId])
+}
+
+model Story {
+  id          String          @id @default(cuid())
+  title       String
+  body        String
+  ageGroup    AgeGroup
+  status      ContentStatus   @default(DRAFT)
+  wordCount   Int
+  generatedAt DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  words       StoryWord[]
+  progress    DailyProgress[]
+
+  @@index([ageGroup, publishedAt])
+}
+
+model StoryWord {
+  id              String   @id @default(cuid())
+  storyId         String
+  word            String
+  partOfSpeech    String
+  definition      String
+  exampleSentence String
+  displayOrder    Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  story           Story    @relation(fields: [storyId], references: [id])
+
+  @@index([storyId])
+}
+
+model DailyProgress {
+  id               String   @id @default(cuid())
+  childId          String
+  storyId          String
+  date             DateTime
+  completed        Boolean  @default(false)
+  wordsViewed      Int      @default(0)
+  timeSpentSeconds Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  child            Child    @relation(fields: [childId], references: [id])
+  story            Story    @relation(fields: [storyId], references: [id])
+
+  @@unique([childId, date])
+  @@index([childId])
+}
+
+model WordEvent {
+  id       String     @id @default(cuid())
+  childId  String?
+  word     String
+  source   WordSource
+  storyId  String?
+  tappedAt DateTime   @default(now())
+  child    Child?     @relation(fields: [childId], references: [id])
+
+  @@index([childId])
+}
+
+model ScanSession {
+  id           String     @id @default(cuid())
+  childId      String?
+  originalText String
+  ageGroup     AgeGroup
+  wordCount    Int
+  createdAt    DateTime   @default(now())
+  child        Child?     @relation(fields: [childId], references: [id])
+  words        ScanWord[]
+}
+
+model ScanWord {
+  id              String      @id @default(cuid())
+  sessionId       String
+  word            String
+  partOfSpeech    String
+  definition      String
+  exampleSentence String
+  displayOrder    Int
+  createdAt       DateTime    @default(now())
+  session         ScanSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+}
