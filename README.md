@@ -1,33 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IntelliWords
 
-## Getting Started
+Daily AI-generated English stories for Indian kids aged 4–12. Children read a short story tailored to their age group, tap vocabulary words to see definitions, and build a daily reading streak. Parents and teachers can track progress via a dashboard.
 
-First, run the development server:
+## Tech Stack
+
+| Layer     | Technology                          |
+| --------- | ----------------------------------- |
+| Framework | Next.js 16 (App Router, TypeScript) |
+| Styling   | Tailwind CSS v4                     |
+| Database  | PostgreSQL + Prisma 7               |
+| AI        | Groq (`llama-3.3-70b-versatile`)    |
+| State     | Zustand + TanStack Query v5         |
+| Auth      | NextAuth v5 (beta)                  |
+
+---
+
+## Prerequisites
+
+- **Node.js** 20+
+- **PostgreSQL** 15+ running locally (or a hosted instance)
+- **Groq API key** — free at [console.groq.com](https://console.groq.com/keys)
+
+---
+
+## Local Setup
+
+### 1. Clone and install dependencies
+
+```bash
+git clone <repo-url>
+cd intelli-words
+npm install
+```
+
+### 2. Configure environment variables
+
+Copy the example file and fill in your values:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local`:
+
+```env
+# PostgreSQL connection string
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/intelliwords"
+
+# Groq AI — get a free key at https://console.groq.com/keys
+GROQ_API_KEY="gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# NextAuth — generate with: openssl rand -base64 32
+NEXTAUTH_SECRET="your-secret-here"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+### 3. Set up the database
+
+Create the database, then run Prisma migrations:
+
+```bash
+createdb intelliwords          # or create it via psql / pgAdmin
+npx prisma migrate dev --name init
+npx prisma generate
+```
+
+### 4. Start the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Application Routes
 
-## Learn More
+| Route        | Description                             |
+| ------------ | --------------------------------------- |
+| `/`          | Landing page                            |
+| `/story`     | Daily story for the selected age group  |
+| `/scan`      | Paste book text to extract vocabulary   |
+| `/dashboard` | Parent/teacher view with child progress |
 
-To learn more about Next.js, take a look at the following resources:
+## Age Groups
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Group       | Age       | Vocab per day |
+| ----------- | --------- | ------------- |
+| 🌱 SEEDLING | 4–6 yrs   | 10 words      |
+| 🌿 SPROUT   | 6–8 yrs   | 15 words      |
+| 🌳 SAPLING  | 8–10 yrs  | 20 words      |
+| 🌲 TREE     | 10–12 yrs | 25 words      |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
+
+## Available Scripts
+
+```bash
+npm run dev      # Start dev server (http://localhost:3000)
+npm run build    # Production build
+npm run start    # Start production server
+npm run lint     # Run ESLint
+```
+
+## API Endpoints
+
+| Method | Endpoint                     | Description                         |
+| ------ | ---------------------------- | ----------------------------------- |
+| GET    | `/api/health`                | Health check                        |
+| GET    | `/api/story/today?ageGroup=` | Fetch or generate today's story     |
+| GET    | `/api/story/:id`             | Fetch story by ID                   |
+| POST   | `/api/scan`                  | Extract vocabulary from pasted text |
+| GET    | `/api/children`              | List children for a parent          |
+| POST   | `/api/children`              | Create a child profile              |
+| GET    | `/api/children/:id/progress` | Get reading progress summary        |
+| POST   | `/api/progress`              | Record story completion             |
+| POST   | `/api/events/word-tap`       | Record a vocabulary word tap        |
 
 ## Deploy on Vercel
 

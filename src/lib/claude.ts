@@ -21,11 +21,13 @@ function validateStoryResponse(
   if (!Array.isArray(d.words))
     return { valid: false, error: "Missing words array" };
 
+  // Require at least one <v> tag per vocabulary word; extras are fine (they
+  // just highlight additional occurrences of the word in the story body).
   const vTagMatches = (d.body as string).match(/<v>(.*?)<\/v>/g) || [];
-  if (vTagMatches.length !== expectedWordCount)
+  if (vTagMatches.length < expectedWordCount)
     return {
       valid: false,
-      error: `Expected ${expectedWordCount} <v> tags, found ${vTagMatches.length}`,
+      error: `Expected at least ${expectedWordCount} <v> tags, found ${vTagMatches.length}`,
     };
   if (d.words.length !== expectedWordCount)
     return {
@@ -66,7 +68,7 @@ function validateScanResponse(
 export async function generateStory(ageGroup: AgeGroupKey) {
   const { system, user } = buildStoryPrompt(ageGroup);
   const expectedWordCount = AGE_GROUPS[ageGroup].wordsPerDay;
-  const maxRetries = 2;
+  const maxRetries = 3;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const retryNote =

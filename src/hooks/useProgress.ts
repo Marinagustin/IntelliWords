@@ -1,31 +1,29 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import type { ProgressSummary } from "@/types";
 
+const fetchProgress = async (
+  childId: string,
+  days: number,
+): Promise<ProgressSummary> => {
+  const res = await axios.get<{ data: ProgressSummary }>(
+    `/api/children/${childId}/progress?days=${days}`,
+  );
+  return res.data.data;
+};
+
 export function useProgress(childId: string, days = 7) {
-  const [data, setData] = useState<ProgressSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["progress", childId, days],
+    queryFn: () => fetchProgress(childId, days),
+    enabled: !!childId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-  const fetchProgress = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get<{ data: ProgressSummary }>(
-        `/api/children/${childId}/progress?days=${days}`,
-      );
-      setData(res.data.data);
-    } catch {
-      setError("Failed to load progress");
-    } finally {
-      setIsLoading(false);
-    }
+  return {
+    data: data ?? null,
+    isLoading,
+    error: error ? "Failed to load progress" : null,
+    refetch,
   };
-
-  useEffect(() => {
-    if (childId) fetchProgress();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [childId, days]);
-
-  return { data, isLoading, error, refetch: fetchProgress };
 }

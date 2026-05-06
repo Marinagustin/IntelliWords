@@ -16,12 +16,14 @@ interface DailyStoryProps {
   ageGroup: AgeGroupKey;
   storyId?: string;
   childId?: string;
+  onStoryLoaded?: (words: StoryWord[]) => void;
 }
 
 export default function DailyStory({
   ageGroup,
   storyId,
   childId,
+  onStoryLoaded,
 }: DailyStoryProps) {
   const { story, isLoading, error, refetch } = useStory(ageGroup, storyId);
   const [selectedWord, setSelectedWord] = useState<WordDetail | null>(null);
@@ -29,6 +31,13 @@ export default function DailyStory({
   const [wordsViewed, setWordsViewed] = useState<Set<string>>(new Set());
   const timeRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (story?.words) {
+      onStoryLoaded?.(story.words);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [story?.id]);
 
   useEffect(() => {
     timeRef.current = 0;

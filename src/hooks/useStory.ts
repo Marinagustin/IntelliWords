@@ -1,33 +1,30 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import type { AgeGroupKey } from "@/constants/ageGroups";
 import type { Story } from "@/types";
 
+const fetchStory = async (
+  ageGroup: AgeGroupKey,
+  storyId?: string,
+): Promise<Story> => {
+  const url = storyId
+    ? `/api/story/${storyId}`
+    : `/api/story/today?ageGroup=${ageGroup}`;
+  const res = await axios.get<{ data: Story }>(url);
+  return res.data.data;
+};
+
 export function useStory(ageGroup: AgeGroupKey, storyId?: string) {
-  const [story, setStory] = useState<Story | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["story", ageGroup, storyId ?? "today"],
+    queryFn: () => fetchStory(ageGroup, storyId),
+    staleTime: 60 * 60 * 1000, // 1 hour — stories change once per day
+  });
 
-  const fetchStory = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const url = storyId
-        ? `/api/story/${storyId}`
-        : `/api/story/today?ageGroup=${ageGroup}`;
-      const res = await axios.get<{ data: Story }>(url);
-      setStory(res.data.data);
-    } catch {
-      setError("Failed to load story");
-    } finally {
-      setIsLoading(false);
-    }
+  return {
+    story: data ?? null,
+    isLoading,
+    error: error ? "Failed to load story" : null,
+    refetch,
   };
-
-  useEffect(() => {
-    fetchStory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ageGroup, storyId]);
-
-  return { story, isLoading, error, refetch: fetchStory };
 }

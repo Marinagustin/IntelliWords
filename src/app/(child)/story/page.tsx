@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { Metadata } from "next";
 import AppShell from "@/components/layout/AppShell";
 import AgeGroupSelector from "@/components/ui/AgeGroupSelector";
 import DailyStory from "@/components/story/DailyStory";
@@ -17,16 +16,22 @@ export default function StoryPage() {
   const [selectedWord, setSelectedWord] = useState<WordDetail | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  const handleAgeGroupChange = (g: AgeGroupKey) => {
+    setAgeGroup(g);
+    setStoryWords([]);
+  };
+
   return (
     <AppShell activeTab="story">
       <div className="max-w-[680px] mx-auto space-y-6 py-2">
         <AgeGroupSelector
           selectedGroup={activeAgeGroup}
-          onChange={(g: AgeGroupKey) => setAgeGroup(g)}
+          onChange={handleAgeGroupChange}
         />
         <DailyStory
           ageGroup={activeAgeGroup}
           childId={activeChildId ?? undefined}
+          onStoryLoaded={setStoryWords}
         />
         {storyWords.length > 0 && (
           <WordGrid
